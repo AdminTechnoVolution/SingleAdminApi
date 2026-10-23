@@ -1,5 +1,5 @@
 import { normalizedCountryExpr, normalizedGenderExpr, pageResult, safeRegex } from './common';
-import { PaginationDto } from './common';
+import { PaginationDto, UserQueryDto } from './common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -32,5 +32,11 @@ describe('common helpers', () => {
   it('still rejects genuinely invalid pagination values', async () => {
     const dto = plainToInstance(PaginationDto, { page: '0', pageSize: '101' });
     expect(await validate(dto)).toHaveLength(2);
+  });
+  it('allows only the 30-day activity filter', async () => {
+    const supported = plainToInstance(UserQueryDto, { activity: '30d' });
+    const unsupported = plainToInstance(UserQueryDto, { activity: '90d' });
+    expect(await validate(supported)).toHaveLength(0);
+    expect(await validate(unsupported)).toHaveLength(1);
   });
 });

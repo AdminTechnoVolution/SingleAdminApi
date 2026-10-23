@@ -22,7 +22,7 @@ export class DashboardService {
   async summary(): Promise<Record<string, unknown>> {
     if (this.summaryCache && this.summaryCache.expiresAt > Date.now()) return this.summaryCache.value;
     const now = new Date();
-    const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, activity] = await Promise.all([
       this.users.countDocuments(),
       this.reports.countDocuments(),
@@ -47,13 +47,7 @@ export class DashboardService {
         ...activityStages(),
         { $group: {
           _id: null,
-          activeUsersLast7Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', daysAgo(7)] }, 1, 0] } },
-          activeUsersLast30Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', daysAgo(30)] }, 1, 0] } },
-          activeUsersLast90Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', daysAgo(90)] }, 1, 0] } },
-          inactiveUsersOver90Days: { $sum: { $cond: [
-            { $and: [{ $gt: ['$lastInteractionAt', new Date(0)] }, { $lt: ['$lastInteractionAt', daysAgo(90)] }] }, 1, 0,
-          ] } },
-          usersWithoutActivity: { $sum: { $cond: [{ $lte: ['$lastInteractionAt', new Date(0)] }, 1, 0] } },
+          activeUsersLast30Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', thirtyDaysAgo] }, 1, 0] } },
         } },
       ]),
     ]);
@@ -75,11 +69,7 @@ export class DashboardService {
         };
       }),
       activity: activity[0] ?? {
-        activeUsersLast7Days: 0,
         activeUsersLast30Days: 0,
-        activeUsersLast90Days: 0,
-        inactiveUsersOver90Days: 0,
-        usersWithoutActivity: 0,
       },
     };
     this.summaryCache = { value, expiresAt: Date.now() + 5 * 60 * 1000 };

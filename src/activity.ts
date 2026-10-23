@@ -81,11 +81,7 @@ export function activityStages(): PipelineStage[] {
 }
 
 export function activityMatch(activity?: string, now = new Date()): Record<string, unknown> | null {
-  if (!activity) return null;
-  const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-  if (activity === '7d') return { lastInteractionAt: { $gte: daysAgo(7) } };
-  if (activity === '30d') return { lastInteractionAt: { $gte: daysAgo(30) } };
-  if (activity === '90d') return { lastInteractionAt: { $gte: daysAgo(90) } };
-  if (activity === 'inactive') return { lastInteractionAt: { $gt: new Date(0), $lt: daysAgo(90) } };
-  return null;
+  if (activity !== '30d') return null;
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  return { lastInteractionAt: { $gte: thirtyDaysAgo } };
 }

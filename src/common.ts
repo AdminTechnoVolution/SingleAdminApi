@@ -23,7 +23,7 @@ export class UserQueryDto extends PaginationDto {
   @IsOptional() @IsString() country?: string;
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
-  @IsOptional() @Transform(({ value }) => value || undefined) @IsIn(['7d', '30d', '90d', 'inactive']) activity?: '7d' | '30d' | '90d' | 'inactive';
+  @IsOptional() @Transform(({ value }) => value || undefined) @IsIn(['30d']) activity?: '30d';
   @IsOptional() @IsIn(['createdAt', 'lastInteraction']) sortBy: 'createdAt' | 'lastInteraction' = 'createdAt';
   @IsOptional() @Transform(({ value }) => String(value).toLowerCase()) @IsIn(['asc', 'desc'])
   order: 'asc' | 'desc' = 'desc';
