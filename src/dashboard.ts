@@ -23,7 +23,7 @@ export class DashboardService {
     if (this.summaryCache && this.summaryCache.expiresAt > Date.now()) return this.summaryCache.value;
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, activity] = await Promise.all([
+    const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, activity, platforms] = await Promise.all([
       this.users.countDocuments(),
       this.reports.countDocuments(),
       this.reports.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
@@ -50,6 +50,12 @@ export class DashboardService {
           activeUsersLast30Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', thirtyDaysAgo] }, 1, 0] } },
         } },
       ]),
+      this.users.aggregate([
+        { $group: {
+          _id: { $ifNull: ['$platform', 'Android'] },
+          count: { $sum: 1 },
+        } },
+      ]),
     ]);
     const value = {
       totalUsers,
@@ -68,6 +74,10 @@ export class DashboardService {
           percentage: totalUsers ? Number(((count / totalUsers) * 100).toFixed(2)) : 0,
         };
       }),
+      usersByPlatform: {
+        android: platforms.find((row) => row._id === 'Android')?.count ?? 0,
+        ios: platforms.find((row) => row._id === 'iOS')?.count ?? 0,
+      },
       activity: activity[0] ?? {
         activeUsersLast30Days: 0,
       },

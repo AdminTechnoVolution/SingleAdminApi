@@ -4,6 +4,7 @@ import { HydratedDocument, Types } from 'mongoose';
 @Schema({ collection: 'users', versionKey: false })
 export class User {
   @Prop() email?: string;
+  @Prop({ enum: ['Android', 'iOS'], default: 'Android' }) platform?: 'Android' | 'iOS';
   @Prop({ type: Object }) userInfo?: { fullName?: string; birthdate?: Date };
   @Prop({ type: Object }) location?: { country?: string; city?: string; coordinates?: number[] };
   @Prop() status?: string;
