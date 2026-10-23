@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { validationSchema } from './config';
+import { DEFAULT_SESSION_TTL_SECONDS, validationSchema } from './config';
 import { AuthController, AdminGuard, AuthService } from './auth';
 import { CountriesController } from './countries';
 import { DashboardController, DashboardService } from './dashboard';
@@ -37,7 +37,7 @@ import { UsersController, UsersService } from './users';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow('SESSION_SECRET'),
-        signOptions: { expiresIn: config.get<number>('SESSION_TTL', 3600) },
+        signOptions: { expiresIn: config.get<number>('SESSION_TTL', DEFAULT_SESSION_TTL_SECONDS) },
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 120 }]),

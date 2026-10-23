@@ -13,3 +13,9 @@ no contiene migraciones, creación de índices ni operaciones de escritura.
 La “última interacción” se calcula de forma estimada y en tiempo de consulta a
 partir de eventos ya existentes. El dashboard conserva el resumen en memoria
 durante cinco minutos para limitar la carga de lectura sobre MongoDB.
+
+La sesión administrativa (JWT y cookie) dura 30 días de forma predeterminada.
+En producción, configura `SESSION_TTL=2592000` en las variables de entorno del
+App Service y reinicia la API; cualquier valor explícito en el entorno
+reemplaza el predeterminado. El portal sigue enviando la cookie en sus
+solicitudes autenticadas, y cerrar sesión explícitamente la elimina.

@@ -9,6 +9,7 @@ import { Throttle } from '@nestjs/throttler';
 import { IsString } from 'class-validator';
 import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
+import { DEFAULT_SESSION_TTL_SECONDS } from './config';
 
 export const SESSION_COOKIE = 'single_admin_session';
 type AdminClaims = { sub: string; email: string; name?: string; picture?: string };
@@ -47,7 +48,7 @@ export class AuthService {
       httpOnly: true,
       secure: this.config.get<boolean>('COOKIE_SECURE', false),
       sameSite,
-      maxAge: this.config.get<number>('SESSION_TTL', 3600) * 1000,
+      maxAge: this.config.get<number>('SESSION_TTL', DEFAULT_SESSION_TTL_SECONDS) * 1000,
       path: '/',
     } as const;
   }
