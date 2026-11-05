@@ -59,4 +59,24 @@ describe('DashboardService', () => {
     expect(before - since).toBeLessThanOrEqual(30 * 24 * 60 * 60 * 1000 + 1000);
     expect(JSON.stringify(users.aggregate.mock.calls)).not.toContain('lastInteractionAt');
   });
+
+  it('does not serve a cached 30-day active count', async () => {
+    let active = 0;
+    const countDocuments = jest.fn((filter?: Record<string, unknown>) => Promise.resolve(filter && 'lastActivityAt' in filter ? active : 7));
+    const users = { countDocuments, aggregate: jest.fn().mockResolvedValue([]) };
+    const reports = { countDocuments: jest.fn().mockResolvedValue(0), aggregate: jest.fn().mockResolvedValue([]) };
+    const subscriptions = { aggregate: jest.fn().mockResolvedValue([]) };
+    const subscriptionService = { activePipeline: jest.fn().mockReturnValue([]) };
+    const service = new DashboardService(
+      users as unknown as Model<UserDocument>,
+      reports as unknown as Model<Report>,
+      subscriptions as unknown as Model<Subscription>,
+      subscriptionService as unknown as SubscriptionsService,
+    );
+
+    expect((await service.summary()).activity).toEqual({ activeUsersLast30Days: 0 });
+    active = 2;
+    expect((await service.summary()).activity).toEqual({ activeUsersLast30Days: 2 });
+    expect(users.aggregate).toHaveBeenCalledTimes(3); // countries, genders, platforms: computed once, then cached
+  });
 });

@@ -20,9 +20,18 @@ export class DashboardService {
   ) {}
 
   async summary(): Promise<Record<string, unknown>> {
+    // The 30-day active count is a cheap indexed count, so it is always fresh; only the heavy
+    // aggregations are cached. (Caching it showed 0 for minutes after users became active.)
+    const [cached, activeUsersLast30Days] = await Promise.all([
+      this.cachedSummary(),
+      this.users.countDocuments(activeSinceMatch(new Date())),
+    ]);
+    return { ...cached, activity: { activeUsersLast30Days } };
+  }
+
+  private async cachedSummary(): Promise<Record<string, unknown>> {
     if (this.summaryCache && this.summaryCache.expiresAt > Date.now()) return this.summaryCache.value;
-    const now = new Date();
-    const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, activity, platforms] = await Promise.all([
+    const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, platforms] = await Promise.all([
       this.users.countDocuments(),
       this.reports.countDocuments(),
       this.reports.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
@@ -42,8 +51,6 @@ export class DashboardService {
         } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
       ]),
-      // Indexed count on users.lastActivityAt (no per-user lookups).
-      this.users.countDocuments(activeSinceMatch(now)),
       this.users.aggregate([
         { $group: {
           _id: { $ifNull: ['$platform', 'Android'] },
@@ -72,7 +79,6 @@ export class DashboardService {
         android: platforms.find((row) => row._id === 'Android')?.count ?? 0,
         ios: platforms.find((row) => row._id === 'iOS')?.count ?? 0,
       },
-      activity: { activeUsersLast30Days: activity },
     };
     this.summaryCache = { value, expiresAt: Date.now() + 5 * 60 * 1000 };
     return value;
