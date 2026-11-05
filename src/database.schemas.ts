@@ -9,6 +9,8 @@ export class User {
   @Prop({ type: Object }) location?: { country?: string; city?: string; coordinates?: number[] };
   @Prop() status?: string;
   @Prop() created_at?: Date;
+  // Set by SingleApi each time the user opens Discover (first screen after opening the app).
+  @Prop() lastActivityAt?: Date;
   @Prop({ type: [Object] }) photos?: Array<{
     isProfile?: boolean;
     path?: string;

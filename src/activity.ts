@@ -80,8 +80,13 @@ export function activityStages(): PipelineStage[] {
   ];
 }
 
+/** Users who opened the app in the last 30 days (`users.lastActivityAt`, written by SingleApi on Discover). */
+export function activeSinceMatch(now = new Date()): Record<string, unknown> {
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  return { lastActivityAt: { $gte: thirtyDaysAgo } };
+}
+
 export function activityMatch(activity?: string, now = new Date()): Record<string, unknown> | null {
   if (activity !== '30d') return null;
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  return { lastInteractionAt: { $gte: thirtyDaysAgo } };
+  return activeSinceMatch(now);
 }

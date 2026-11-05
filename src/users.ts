@@ -58,8 +58,8 @@ export class UsersService {
       return pageResult(result?.items ?? [], result?.metadata[0]?.total ?? 0, query.page, query.pageSize);
     }
 
-    const pipeline: PipelineStage[] = [{ $match: filter }, ...activityStages()];
-    if (activityFilter) pipeline.push({ $match: activityFilter });
+    // The 30-day filter reads users.lastActivityAt, so it runs before the activity lookups.
+    const pipeline: PipelineStage[] = [{ $match: { ...filter, ...(activityFilter ?? {}) } }, ...activityStages()];
     pipeline.push(
       { $sort: { [sortField]: sortDirection, _id: 1 } },
       safeProjection,

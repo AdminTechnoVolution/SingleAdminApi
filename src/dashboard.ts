@@ -6,7 +6,7 @@ import { AdminGuard, SESSION_COOKIE } from './auth';
 import { normalizedCountryExpr, normalizedGenderExpr } from './common';
 import { Report, Subscription, User, UserDocument } from './database.schemas';
 import { SubscriptionsService } from './subscriptions';
-import { activityStages } from './activity';
+import { activeSinceMatch } from './activity';
 
 @Injectable()
 export class DashboardService {
@@ -22,7 +22,6 @@ export class DashboardService {
   async summary(): Promise<Record<string, unknown>> {
     if (this.summaryCache && this.summaryCache.expiresAt > Date.now()) return this.summaryCache.value;
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const [totalUsers, totalReports, reportStatuses, countries, activeSubscriptions, genders, activity, platforms] = await Promise.all([
       this.users.countDocuments(),
       this.reports.countDocuments(),
@@ -43,13 +42,8 @@ export class DashboardService {
         } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
       ]),
-      this.users.aggregate([
-        ...activityStages(),
-        { $group: {
-          _id: null,
-          activeUsersLast30Days: { $sum: { $cond: [{ $gte: ['$lastInteractionAt', thirtyDaysAgo] }, 1, 0] } },
-        } },
-      ]),
+      // Indexed count on users.lastActivityAt (no per-user lookups).
+      this.users.countDocuments(activeSinceMatch(now)),
       this.users.aggregate([
         { $group: {
           _id: { $ifNull: ['$platform', 'Android'] },
@@ -78,9 +72,7 @@ export class DashboardService {
         android: platforms.find((row) => row._id === 'Android')?.count ?? 0,
         ios: platforms.find((row) => row._id === 'iOS')?.count ?? 0,
       },
-      activity: activity[0] ?? {
-        activeUsersLast30Days: 0,
-      },
+      activity: { activeUsersLast30Days: activity },
     };
     this.summaryCache = { value, expiresAt: Date.now() + 5 * 60 * 1000 };
     return value;
